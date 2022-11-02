@@ -26,21 +26,69 @@
 
         function controller($scope, $http) { // example controller creating the scope bindings
             $scope.todos = [];
-            //$scope.isLoading = false;
+            $scope.isLoading = true;
+            $scope.page = 1;
+            $scope.page_size = 20;
+            $scope.filter = "Id";
             // example of xhr call to the server's 'RESTful' api
-            $http.get("api/Todo/Filtered", {
-                params:
+
+            $http.get("api/Todo/Todos").then(response => {
+
+                let maxSize = Math.ceil(response.data.length / $scope.page_size);
+                $scope.$broadcast("SET_MAX_SIZE", maxSize);
+
+            });
+
+            $scope.UpdateData = function () {
+
+                if ($scope.page_size == "all")
                 {
-                    page: 1,
-                    page_size: 10,
-                    order_by: "Id"
+                    $http.get("api/Todo/Todos").then(response => {
+                        $scope.todos = response.data
+                    });
+
+                    return;
                 }
-            }).then(
-                response => $scope.todos = response.data
-            );
+
+                $http.get("api/Todo/Filtered", {
+                    params:
+                    {
+                        page: $scope.page,
+                        page_size: $scope.page_size,
+                        order_by: $scope.filter
+                    }
+                }).then(
+                    response => {
+                        $scope.todos = response.data;
+                        $scope.isLoading = false;
+                    }
+                );
+            }
+
+            $scope.UpdateData();
+
+            $scope.sortTableBy = function (prop) {
+                $scope.filter = prop;
+                $scope.UpdateData();
+            }
+
+            $scope.$on("PAGE_UPDATED", function (e, data) {
+                $scope.page = data;
+                $scope.UpdateData();
+
+            });
+
+            $scope.$on("PAGESIZE_UPDATED", function (e, data) {
+                $scope.page_size = data;
+                $scope.UpdateData();
+
+            });
         }
 
-        function link(scope, element, attrs) { }
+        function link(scope, element, attrs) {
+
+
+        }
 
         return directive;
     }
@@ -64,9 +112,59 @@
             link: link
         };
 
-        function controller($scope) { }
+        function controller($scope) {
 
-        function link(scope, element, attrs) { }
+            $scope.pageData = {
+                maxPage : 1,
+                currentPage : 1,
+                pageSize : 20
+            }
+
+            $scope.selectOptions = [10, 20, 30, 'all'];
+           
+
+            $scope.$on("SET_MAX_SIZE", function (e, data) {
+                $scope.pageData.maxPage = data;
+            });
+
+            $scope.nextPage = function () {
+                if ($scope.pageData.currentPage < $scope.pageData.maxPage) {
+                    $scope.pageData.currentPage += 1;
+                    $scope.$emit("PAGE_UPDATED", $scope.pageData.currentPage);
+                }
+            }
+
+            $scope.prevPage = function () {
+                if ($scope.pageData.currentPage > 1) {
+                    $scope.pageData.currentPage -= 1;
+                    $scope.$emit("PAGE_UPDATED", $scope.pageData.currentPage);
+                }
+            }
+
+            $scope.setPage = function () {
+                if ($scope.pageData.currentPage < $scope.pageData.maxPage && $scope.pageData.currentPage > 0) {
+                    $scope.$emit("PAGE_UPDATED", $scope.pageData.currentPage);
+                }
+            }
+
+            $scope.lastPage = function () {
+                $scope.$emit("PAGE_UPDATED", $scope.pageData.maxPage);
+            }
+
+            $scope.firstPage = function () {
+                $scope.$emit("PAGE_UPDATED", 1);
+            }
+
+            $scope.changePageSize = function () {
+                $scope.$emit("PAGESIZE_UPDATED", $scope.pageData.pageSize);
+            }
+
+
+        }
+
+        function link(scope, element, attrs) {
+
+        }
 
         return directive;
     }
