@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace InterviewTestPagination.Models.Todo {
 
@@ -28,7 +27,7 @@ namespace InterviewTestPagination.Models.Todo {
         }
 
         public IEnumerable<Todo> All() {
-            return DataSource.Values.OrderByDescending(t => t.CreatedDate);
+            return DataSource.Values;
         }
 
     }
